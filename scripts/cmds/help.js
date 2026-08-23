@@ -114,9 +114,10 @@ module.exports = {
                 `➥ Version: ${version}`
             );
         }
-
-        const formatCommands = (cmds) =>
-            cmds.sort().map((cmd) => `× ${cmd}`);
+const formatCommands = (cmds) =>
+    cmds
+        .sort()
+        .map((cmd) => `× ${commandNames[cmd] || cmd}`);
 
         let msg = `━━━☠️ 𝗡𝗲𝗼𝗞𝗘𝗫 𝗔𝗜 ☠️━━━\n`;
 
