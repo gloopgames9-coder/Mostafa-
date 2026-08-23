@@ -1,157 +1,141 @@
-onStart: async function ({ message, args, prefix }) {
-    const allCommands = global.GoatBot.commands;
-    const categories = {};
+const fs = require("fs-extra");
+const path = require("path");
 
-    const categoryNames = {
-        admin: "الإدارة",
-        ai: "الذكاء الاصطناعي",
-        "ai-generated": "مولد بالذكاء الاصطناعي",
-        "ai-image": "صور الذكاء الاصطناعي",
-        boxchat: "إدارة المجموعة",
-        charting: "المخططات",
-        config: "الإعدادات",
-        "contacts admin": "إدارة التواصل",
-        custom: "التخصيص",
-        economy: "الاقتصاد",
-        entertainment: "الترفيه",
-        fun: "التسلية",
-        game: "الألعاب",
-        group: "المجموعة",
-        image: "الصور",
-        info: "المعلومات",
-        love: "الحب",
-        market: "المتجر",
-        media: "الوسائط",
-        music: "الموسيقى",
-        "18+": "للكبار",
-        other: "أخرى",
-        others: "أخرى",
-        owner: "المالك",
-        rank: "الرتب",
-        religion: "الدين",
-        search: "البحث",
-        software: "البرامج",
-        system: "النظام",
-        tools: "الأدوات",
-        tts: "تحويل النص إلى صوت",
-        uploader: "رفع الملفات",
-        utility: "أدوات مساعدة",
-        wiki: "الموسوعة"
-    };
+module.exports = {
+    config: {
+        name: "help",
+        aliases: ["menu", "commands"],
+        version: "4.8",
+        author: "NeoKEX",
+        shortDescription: "Show all available commands",
+        longDescription: "Displays a clean and premium-styled categorized list of commands.",
+        category: "system",
+        guide: "{pn}help [command name]"
+    },
 
-    const cleanCategoryName = (text) => {
-        if (!text) return "others";
+    onStart: async function ({ message, args, prefix }) {
+        const allCommands = global.GoatBot.commands;
+        const categories = {};
 
-        return text
-            .normalize("NFKD")
-            .replace(/[^\w\s-]/g, "")
-            .replace(/\s+/g, " ")
-            .trim()
-            .toLowerCase();
-    };
+        const emojiMap = {
+            ai: "➥",
+            "ai-image": "➥",
+            group: "➥",
+            system: "➥",
+            fun: "➥",
+            owner: "➥",
+            config: "➥",
+            economy: "➥",
+            media: "➥",
+            "18+": "➥",
+            tools: "➥",
+            utility: "➥",
+            info: "➥",
+            image: "➥",
+            game: "➥",
+            admin: "➥",
+            rank: "➥",
+            boxchat: "➥",
+            others: "➥"
+        };
 
-    for (const [name, cmd] of allCommands) {
-        const cat = cleanCategoryName(cmd.config.category);
+        const cleanCategoryName = (text) => {
+            if (!text) return "others";
 
-        if (!categories[cat]) {
-            categories[cat] = [];
+            return text
+                .normalize("NFKD")
+                .replace(/[^\w\s-]/g, "")
+                .replace(/\s+/g, " ")
+                .trim()
+                .toLowerCase();
+        };
+
+        for (const [name, cmd] of allCommands) {
+            const cat = cleanCategoryName(cmd.config.category);
+
+            if (!categories[cat])
+                categories[cat] = [];
+
+            categories[cat].push(cmd.config.name);
         }
 
-        categories[cat].push(cmd.config.name);
-    }
+        if (args[0]) {
+            const query = args[0].toLowerCase();
 
-    // لو المستخدم كتب اسم أمر
-    if (args[0]) {
-        const query = args[0].toLowerCase();
+            const cmd =
+                allCommands.get(query) ||
+                [...allCommands.values()].find(
+                    (c) => (c.config.aliases || []).includes(query)
+                );
 
-        const cmd =
-            allCommands.get(query) ||
-            [...allCommands.values()].find(
-                (c) => (c.config.aliases || []).includes(query)
-            );
+            if (!cmd)
+                return message.reply(`❌ Command "${query}" not found.`);
 
-        if (!cmd) {
+            const {
+                name,
+                version,
+                author,
+                guide,
+                category,
+                shortDescription,
+                longDescription,
+                aliases
+            } = cmd.config;
+
+            const desc =
+                typeof longDescription === "string"
+                    ? longDescription
+                    : longDescription?.en ||
+                      shortDescription?.en ||
+                      shortDescription ||
+                      "No description";
+
+            const usage =
+                typeof guide === "string"
+                    ? guide.replace(/{pn}/g, prefix)
+                    : guide?.en?.replace(/{pn}/g, prefix) ||
+                      `${prefix}${name}`;
+
+            const requiredRole =
+                cmd.config.role !== undefined
+                    ? cmd.config.role
+                    : 0;
+
             return message.reply(
-                `❌ الأمر "${query}" غير موجود.`
+                `☠️ 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗜𝗡𝗙𝗢 ☠️\n\n` +
+                `➥ Name: ${name}\n` +
+                `➥ Category: ${category || "Uncategorized"}\n` +
+                `➥ Description: ${desc}\n` +
+                `➥ Aliases: ${aliases?.length ? aliases.join(", ") : "None"}\n` +
+                `➥ Usage: ${usage}\n` +
+                `➥ Permission: ${requiredRole}\n` +
+                `➥ Author: ${author}\n` +
+                `➥ Version: ${version}`
             );
         }
 
-        const {
-            name,
-            version,
-            author,
-            guide,
-            category,
-            shortDescription,
-            longDescription,
-            aliases
-        } = cmd.config;
+        const formatCommands = (cmds) =>
+            cmds.sort().map((cmd) => `× ${cmd}`);
 
-        const desc =
-            typeof longDescription === "string"
-                ? longDescription
-                : longDescription?.en ||
-                  shortDescription?.en ||
-                  shortDescription ||
-                  "لا يوجد وصف لهذا الأمر";
+        let msg = `━━━☠️ 𝗡𝗲𝗼𝗞𝗘𝗫 𝗔𝗜 ☠️━━━\n`;
 
-        const usage =
-            typeof guide === "string"
-                ? guide.replace(/{pn}/g, prefix)
-                : guide?.en?.replace(/{pn}/g, prefix) ||
-                  `${prefix}${name}`;
+        const sortedCategories =
+            Object.keys(categories).sort();
 
-        const requiredRole =
-            cmd.config.role !== undefined
-                ? cmd.config.role
-                : 0;
+        for (const cat of sortedCategories) {
+            const emoji = emojiMap[cat] || "➥";
 
-        const categoryKey = cleanCategoryName(category);
+            msg += `\n╭──『 ${emoji} ${cat.toUpperCase()} 』\n`;
 
-        const translatedCategory =
-            categoryNames[categoryKey] ||
-            category ||
-            "غير مصنف";
+            msg += `${formatCommands(categories[cat]).join(" ")}\n`;
 
-        return message.reply(
-            `☠️ 𝗠𝗔𝗟𝗨𝗠𝗔𝗧 𝗔𝗟𝗔𝗠𝗥 ☠️
+            msg += `╰────────────◊\n`;
+        }
 
-➥ الاسم: ${name}
-➥ القسم: ${translatedCategory}
-➥ الوصف: ${desc}
-➥ الاختصارات: ${aliases?.length ? aliases.join(", ") : "لا يوجد"}
-➥ الاستخدام: ${usage}
-➥ الصلاحية: ${requiredRole}
-➥ المطور: ${author || "غير معروف"}
-➥ الإصدار: ${version || "1.0.0"}`
-        );
+        msg +=
+            `\n➥ Use: ${prefix}help [command name] for details\n` +
+            `➥ Use: ${prefix}callad to talk with bot admins '_'`;
+
+        return message.reply(msg);
     }
-
-    // تنسيق الأوامر
-    const formatCommands = (cmds) =>
-        cmds
-            .sort()
-            .map((cmd) => `× ${cmd}`);
-
-    let msg = `━━━☠️ 𝗡𝗲𝗼𝗞𝗘𝗫 𝗔𝗜 ☠️━━━\n`;
-
-    const sortedCategories =
-        Object.keys(categories).sort();
-
-    for (const cat of sortedCategories) {
-        const categoryTitle =
-            categoryNames[cat] || cat;
-
-        msg += `\n╭──『 ${categoryTitle} 』\n`;
-
-        msg += `${formatCommands(categories[cat]).join(" ")}\n`;
-
-        msg += `╰────────────◊\n`;
-    }
-
-    msg += `
-➥ الاستخدام: ${prefix}help [اسم الأمر]
-➥ الاستخدام: ${prefix}callad للتواصل مع مشرفي البوت '_'`;
-
-    return message.reply(msg);
-}
+};
