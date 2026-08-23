@@ -5,7 +5,7 @@ module.exports = {
   name: "help",
   aliases: ["menu", "commands"],
   version: "4.8",
-  author: "NeoKEX",
+  author: "Megumi",
   shortDescription: "عرض كل الأوامر المتاحة",
   longDescription: "يعرض قائمة أوامر منظمة حسب الفئة بتصميم مميز.",
   category: "system",
