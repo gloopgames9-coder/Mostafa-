@@ -7,12 +7,12 @@ module.exports = {
   config: {
     name: "fak",
     aliases: ["fuck"],
-    version: "2.0",
+    version: "3.0",
     author: "Neoaz ゐ",
     countDown: 20,
     role: 2,
-    shortDescription: "Generate image with tagged users",
-    longDescription: "Generate an image using the avatars of mentioned users",
+    shortDescription: "Generate image",
+    longDescription: "Generate image using user avatars",
     category: "fun",
     guide: {
       en: "{pn} @tag"
@@ -20,13 +20,17 @@ module.exports = {
   },
 
   onStart: async function ({ event, message, usersData }) {
-    const mentions = Object.keys(event.mentions || {});
-
-    if (mentions.length === 0) {
-      return message.reply("Please mention someone");
-    }
-
     try {
+      const mentions = Object.keys(event.mentions || {});
+
+      console.log("========== FAK DEBUG ==========");
+      console.log("Mentions:", mentions);
+      console.log("Sender:", event.senderID);
+
+      if (mentions.length === 0) {
+        return message.reply("Please mention someone");
+      }
+
       let one;
       let two;
 
@@ -38,24 +42,58 @@ module.exports = {
         two = mentions[0];
       }
 
-      // Get avatar URLs from GoatBot
-      const [avatarOneUrl, avatarTwoUrl] = await Promise.all([
-        usersData.getAvatarUrl(one),
-        usersData.getAvatarUrl(two)
-      ]);
+      console.log("User 1:", one);
+      console.log("User 2:", two);
 
-      // Load avatars + template
-      const [avatarOne, avatarTwo, baseImage] = await Promise.all([
-        loadImage(avatarOneUrl),
-        loadImage(avatarTwoUrl),
-        loadImage("https://i.ibb.co/YpR7Bpv/image.jpg")
-      ]);
+      // =========================
+      // GET AVATAR URLS
+      // =========================
 
-      // Create canvas using template size
-      const canvas = createCanvas(baseImage.width, baseImage.height);
+      const avatarOneUrl = await usersData.getAvatarUrl(one);
+      console.log("Avatar 1:", avatarOneUrl);
+
+      const avatarTwoUrl = await usersData.getAvatarUrl(two);
+      console.log("Avatar 2:", avatarTwoUrl);
+
+      if (!avatarOneUrl || !avatarTwoUrl) {
+        throw new Error("Failed to get avatar URL");
+      }
+
+      // =========================
+      // LOAD IMAGES
+      // =========================
+
+      console.log("Loading avatar 1...");
+      const avatarOne = await loadImage(avatarOneUrl);
+
+      console.log("Loading avatar 2...");
+      const avatarTwo = await loadImage(avatarTwoUrl);
+
+      console.log("Loading template...");
+
+      const templateUrl =
+        "https://i.ibb.co/YpR7Bpv/image.jpg";
+
+      const baseImage = await loadImage(templateUrl);
+
+      console.log(
+        "Template size:",
+        baseImage.width,
+        "x",
+        baseImage.height
+      );
+
+      // =========================
+      // CANVAS
+      // =========================
+
+      const canvas = createCanvas(
+        baseImage.width,
+        baseImage.height
+      );
+
       const ctx = canvas.getContext("2d");
 
-      // Draw template
       ctx.drawImage(
         baseImage,
         0,
@@ -64,11 +102,20 @@ module.exports = {
         canvas.height
       );
 
-      // Draw circular avatar
-      function drawCircleAvatar(avatar, x, y, size) {
+      // =========================
+      // CIRCLE AVATAR
+      // =========================
+
+      function drawCircleAvatar(
+        avatar,
+        x,
+        y,
+        size
+      ) {
         ctx.save();
 
         ctx.beginPath();
+
         ctx.arc(
           x + size / 2,
           y + size / 2,
@@ -91,46 +138,105 @@ module.exports = {
         ctx.restore();
       }
 
-      // Same positions as the old Jimp code
-      drawCircleAvatar(avatarOne, 23, 320, 90);
-      drawCircleAvatar(avatarTwo, 110, 60, 100);
+      console.log("Drawing avatars...");
 
-      // Temporary directory
-      const tmpDir = path.join(__dirname, "tmp");
+      drawCircleAvatar(
+        avatarOne,
+        23,
+        320,
+        90
+      );
+
+      drawCircleAvatar(
+        avatarTwo,
+        110,
+        60,
+        100
+      );
+
+      // =========================
+      // SAVE
+      // =========================
+
+      const tmpDir = path.join(
+        __dirname,
+        "tmp"
+      );
+
       await fs.ensureDir(tmpDir);
 
       const filePath = path.join(
         tmpDir,
-        `${one}_${two}_${Date.now()}.png`
+        `fak_${Date.now()}.png`
       );
 
-      // Save image
+      console.log(
+        "Saving:",
+        filePath
+      );
+
+      const buffer = canvas.toBuffer(
+        "image/png"
+      );
+
       await fs.writeFile(
         filePath,
-        canvas.toBuffer("image/png")
+        buffer
       );
 
-      // Send image
+      console.log("Image saved successfully!");
+
+      // =========================
+      // SEND
+      // =========================
+
       await message.reply({
-        body: mentions.length === 1
-          ? "「 Harder daddy 🥵💦 」"
-          : "",
-        attachment: fs.createReadStream(filePath)
+        body: "「 Harder daddy 🥵💦 」",
+        attachment: fs.createReadStream(
+          filePath
+        )
       });
 
-      // Delete file after 5 seconds
+      console.log("Image sent!");
+
+      // =========================
+      // DELETE
+      // =========================
+
       setTimeout(() => {
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
+          console.log(
+            "Temporary file deleted."
+          );
         }
       }, 5000);
 
     } catch (error) {
-      console.error("❌ FAK ERROR:", error);
+
+      console.error(
+        "========== FAK ERROR =========="
+      );
+
+      console.error(error);
+
+      console.error(
+        "Message:",
+        error?.message
+      );
+
+      console.error(
+        "Stack:",
+        error?.stack
+      );
+
+      console.error(
+        "================================"
+      );
 
       return message.reply(
-        "❌ Failed to generate the image.\n\n" +
-        (error.message || "Unknown error")
+        "❌ FAK Error: " +
+        (error?.message || "Unknown error")
       );
     }
   }
