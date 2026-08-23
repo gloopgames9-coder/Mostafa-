@@ -264,6 +264,12 @@ module.exports = {
             emojimean: "معنى الإيموجي"
         };
 
+
+        const arabicToCommand = {};
+
+for (const [command, arabicName] of Object.entries(commandNames)) {
+    arabicToCommand[arabicName.toLowerCase()] = command;
+}
         // =========================
         // تنظيف اسم القسم
         // =========================
@@ -304,19 +310,32 @@ module.exports = {
         // عرض تفاصيل أمر معين
         // =========================
 
-        if (args[0]) {
+      if (args[0]) {
 
-            const query =
-                args[0].toLowerCase();
+    let query = args[0].toLowerCase();
 
-            const cmd =
-                allCommands.get(query) ||
-                [...allCommands.values()].find(
-                    (c) =>
-                        (c.config.aliases || [])
-                            .map(a => a.toLowerCase())
-                            .includes(query)
-                );
+    // لو المستخدم كتب الاسم العربي
+    if (arabicToCommand[query]) {
+        query = arabicToCommand[query];
+    }
+
+    const cmd =
+        allCommands.get(query) ||
+        [...allCommands.values()].find(
+            (c) =>
+                (c.config.aliases || [])
+                    .map(a => a.toLowerCase())
+                    .includes(query)
+        );
+
+    if (!cmd) {
+        return message.reply(
+            `❌ الأمر "${args[0]}" غير موجود`
+        );
+    }
+
+    // باقي الكود...
+}
 
             if (!cmd) {
                 return message.reply(
