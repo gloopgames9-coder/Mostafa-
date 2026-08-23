@@ -5,15 +5,16 @@ module.exports = {
   name: "help",
   aliases: ["menu", "commands"],
   version: "4.8",
-  author: "Megumi",
-  shortDescription: "عرض كل الأوامر المتاحة",
-  longDescription: "يعرض قائمة أوامر منظمة حسب الفئة بتصميم مميز.",
+  author: "NeoKEX",
+  shortDescription: "Show all available commands",
+  longDescription: "Displays a clean and premium-styled categorized list of commands.",
   category: "system",
-  guide: "{pn}help [اسم الأمر]"
+  guide: "{pn}help [command name]"
  },
 onStart: async function ({ message, args, prefix }) {
  const allCommands = global.GoatBot.commands;
  const categories = {};
+
  const emojiMap = {
   ai: "➥", "ai-image": "➥", group: "➥", system: "➥",
   fun: "➥", owner: "➥", config: "➥", economy: "➥",
@@ -21,6 +22,7 @@ onStart: async function ({ message, args, prefix }) {
   info: "➥", image: "➥", game: "➥", admin: "➥",
   rank: "➥", boxchat: "➥", others: "➥"
  };
+
  const cleanCategoryName = (text) => {
   if (!text) return "others";
   return text
@@ -30,17 +32,21 @@ onStart: async function ({ message, args, prefix }) {
    .trim()
    .toLowerCase();
  };
+
  for (const [name, cmd] of allCommands) {
   const cat = cleanCategoryName(cmd.config.category);
   if (!categories[cat]) categories[cat] = [];
   categories[cat].push(cmd.config.name);
  }
+
+
  if (args[0]) {
   const query = args[0].toLowerCase();
   const cmd =
    allCommands.get(query) ||
    [...allCommands.values()].find((c) => (c.config.aliases || []).includes(query));
-  if (!cmd) return message.reply(`❌ الأمر "${query}" غير موجود.`);
+  if (!cmd) return message.reply(`❌ Command "${query}" not found.`);
+
   const {
    name,
    version,
@@ -52,29 +58,35 @@ onStart: async function ({ message, args, prefix }) {
    aliases,
    role 
   } = cmd.config;
+
   const desc =
    typeof longDescription === "string"
     ? longDescription
-    : longDescription?.en || shortDescription?.en || shortDescription || "لا يوجد وصف";
+    : longDescription?.en || shortDescription?.en || shortDescription || "No description";
+
   const usage =
    typeof guide === "string"
     ? guide.replace(/{pn}/g, prefix)
     : guide?.en?.replace(/{pn}/g, prefix) || `${prefix}${name}`;
+
      const requiredRole = cmd.config.role !== undefined ? cmd.config.role : 0; 
+
   return message.reply(
-   `☠️ 𝗠𝗘𝗟𝗨𝗠𝗔𝗧 𝗔𝗟𝗔𝗠𝗥 ☠️\n\n` +
-   `➥ الاسم: ${name}\n` +
-   `➥ الفئة: ${category || "بدون تصنيف"}\n` +
-   `➥ الوصف: ${desc}\n` +
-   `➥ أسماء بديلة: ${aliases?.length ? aliases.join(", ") : "لا يوجد"}\n` +
-   `➥ طريقة الاستخدام: ${usage}\n` +
-   `➥ الصلاحية المطلوبة: ${requiredRole}\n` + 
-   `➥ المطور: ${author}\n` +
-   `➥ الإصدار: ${version}`
+   `☠️ 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗜𝗡𝗙𝗢 ☠️\n\n` +
+   `➥ Name: ${name}\n` +
+   `➥ Category: ${category || "Uncategorized"}\n` +
+   `➥ Description: ${desc}\n` +
+   `➥ Aliases: ${aliases?.length ? aliases.join(", ") : "None"}\n` +
+   `➥ Usage: ${usage}\n` +
+   `➥ Permission: ${requiredRole}\n` + 
+   `➥ Author: ${author}\n` +
+   `➥ Version: ${version}`
   );
  }
+
  const formatCommands = (cmds) =>
   cmds.sort().map((cmd) => `× ${cmd}`);
+
  let msg = `━━━☠️ 𝗡𝗲𝗼𝗞𝗘𝗫 𝗔𝗜 ☠️━━━\n`;
  const sortedCategories = Object.keys(categories).sort();
  for (const cat of sortedCategories) {
@@ -83,7 +95,8 @@ onStart: async function ({ message, args, prefix }) {
   msg += `${formatCommands(categories[cat]).join(' ')}\n`; 
   msg += `╰────────────◊\n`;
  }
- msg += `\n➥ استخدم: ${prefix}help [اسم الأمر] لمزيد من التفاصيل\n➥ استخدم: ${prefix}callad للتواصل مع إدمن البوت '_'`;
+ msg += `\n➥ Use: ${prefix}help [command name] for details\n➥Use: ${prefix}callad to talk with bot admins '_'`;
+
  return message.reply(msg);
 }
 };
