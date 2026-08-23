@@ -7,7 +7,7 @@ module.exports = {
   config: {
     name: "fak",
     aliases: ["fuck"],
-    version: "1.1",
+    version: "1.2",
     author: "your name",
     countDown: 20,
     role: 2,
@@ -45,27 +45,36 @@ module.exports = {
         attachment: fs.createReadStream(pathImg) 
       });
 
-      // حذف الملف المؤقت بعد الإرسال للحفاظ على المساحة
+      // تنظيف الملف بعد الإرسال
       if (fs.existsSync(pathImg)) {
         fs.unlinkSync(pathImg);
       }
     } catch (error) {
-      console.error("Error generating image:", error);
+      console.error("Fak Command Error:", error);
       if (fs.existsSync(pathImg)) fs.unlinkSync(pathImg);
-      message.reply("حدث خطأ أثناء إنشاء الصورة. قد تكون المشكلة من رابط الصورة أو جلب الآفاتار.");
+      message.reply("فشل جلب أفتار المستخدمين أو رابط الخلفية غير شغال حالياً.");
     }
   }
 };
 
 async function generateImage(one, two, outputPath) {
-  // استخدام رابط عام لجلب صور البروفايل دون الحاجة لتمرير access_token منتهي الصلاحية
-  const urlOne = `https://graph.facebook.com/${one}/picture?height=512&width=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
-  const urlTwo = `https://graph.facebook.com/${two}/picture?height=512&width=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
+  // استخدام رابط أفتار Facebook المباشر بدون Access Token
+  const avatarUrl1 = `https://graph.facebook.com/${one}/picture?height=512&width=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
+  const avatarUrl2 = `https://graph.facebook.com/${two}/picture?height=512&width=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
+  
+  // رابط القالب (الخلفية)
+  const templateUrl = "https://i.ibb.co/YpR7Bpv/image.jpg";
+
+  // جلب العناصر مع معالجة الأخطاء لكل عنصر على حدة
+  const getJimpImage = async (url) => {
+    const res = await axios.get(url, { responseType: 'arraybuffer' });
+    return await jimp.read(Buffer.from(res.data));
+  };
 
   const [avone, avtwo, background] = await Promise.all([
-    jimp.read(urlOne),
-    jimp.read(urlTwo),
-    jimp.read("https://i.ibb.co/YpR7Bpv/image.jpg")
+    getJimpImage(avatarUrl1),
+    getJimpImage(avatarUrl2),
+    getJimpImage(templateUrl)
   ]);
 
   avone.circle();
