@@ -43,12 +43,30 @@ module.exports = {
 };
 
 async function bal(one, two) {
-  const avone = await jimp.read(`https://graph.facebook.com/${one}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`);
-  avone.circle();
-  const avtwo = await jimp.read(`https://graph.facebook.com/${two}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`);
-  avtwo.circle();
+  const avoneResponse = await axios.get(
+  `https://graph.facebook.com/${one}/picture?width=512&height=512&access_token=YOUR_TOKEN`,
+  { responseType: "arraybuffer" }
+);
+
+const avone = await jimp.read(avoneResponse.data);
+avone.circle();
+
+const avtwoResponse = await axios.get(
+  `https://graph.facebook.com/${two}/picture?width=512&height=512&access_token=YOUR_TOKEN`,
+  { responseType: "arraybuffer" }
+);
+
+const avtwo = await jimp.read(avtwoResponse.data);
+avtwo.circle();
+
+const imgResponse = await axios.get(
+  "https://i.ibb.co/YpR7Bpv/image.jpg",
+  { responseType: "arraybuffer" }
+);
+
+const img = await jimp.read(imgResponse.data);
   const pth = "fucked.png";
-  const img = await jimp.read("https://i.ibb.co/YpR7Bpv/image.jpg");
+  
 
   img.resize(639, 480).composite(avone.resize(90, 90), 23, 320).composite(avtwo.resize(100, 100), 110, 60);
 
